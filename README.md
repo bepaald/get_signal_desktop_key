@@ -1,5 +1,5 @@
 # get_signal_desktop_key
-Since Signal Desktop 6.17, the cipher key used to read the database is encrypted. This program attempts to decrypt the key. For this it tries to read a password from the your keyring/wallet/collection (name varies based on implementation) through `dbus`.
+Since Signal Desktop 7.17, the cipher key used to read the database is encrypted. This program attempts to decrypt the key. For this it tries to read a password from the your keyring/wallet/collection (name varies based on implementation) through `dbus`.
 
 # Requirements
 
