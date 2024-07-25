@@ -28,7 +28,7 @@ $ ./get_signal_desktop_key
 ```
 The program expects to find the Signal Desktop config file in `~/.config/Signal/config.json`. If your config file is at a different location (or you're on the Beta), you can supply it as an argument to the program. For example:
 ```
-$./get_signal_desktop_key ~/.config/Signal Beta/json.config
+$ ./get_signal_desktop_key ~/.config/Signal Beta/json.config
 ```
 
 If the program works, you could let me know be leaving a thumbs up in [Issue #1](https://github.com/bepaald/get_signal_desktop_key/issues/1). 
