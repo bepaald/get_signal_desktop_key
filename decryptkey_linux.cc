@@ -27,6 +27,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <cstring>
 
 #include <sstream>
 #include <iomanip>
@@ -150,6 +151,12 @@ std::string decryptKey_linux(std::string const &secret, std::string const &encry
   bepaald::hexStringToBytes(encryptedkeystr, data.get(), data_length);
   if (g_verbose) std::cout << "Data: " << bepaald::bytesToHexString(data.get(), data_length) << std::endl;
 
+  // check header
+  unsigned char v11header[3] = {'v', '1', '1'};
+  if (std::memcmp(data.get(), v11header, 3) != 0) [[unlikely]]
+    std::cout << "WARNING: Unexpected header value: " << bepaald::bytesToHexString(data.get(), 3) << std::endl;
+
+  
 
   // set iv
   uint64_t iv_length = 16;
