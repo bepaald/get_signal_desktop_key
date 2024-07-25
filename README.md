@@ -7,7 +7,7 @@ Note this program is Linux only. For Windows, decrypting the keys is already par
 
 This program depends on
 - A c++ compiler, supporting c++17
-- dbus (make sure to install the development package if your distro provides them separately, eg: `libdbus-1-dev`)
+- dbus (make sure to install the development package if your distro provides them separately, for example on Debian: `libdbus-1-dev`)
 - openssl (again, development package)
 
 # Compile
@@ -26,7 +26,10 @@ Simply run the binary from the command line:
 ```
 $ ./get_signal_desktop_key
 ```
-The program expects the Signal Desktop config file in `~/.config/Signal/config.json`. If your config file is at a different location (or you're on the Beta), you can supply it as an argument to the program. 
+The program expects to find the Signal Desktop config file in `~/.config/Signal/config.json`. If your config file is at a different location (or you're on the Beta), you can supply it as an argument to the program. For example:
+```
+$./get_signal_desktop_key ~/.config/Signal Beta/json.config
+```
 
 If the program works, you could let me know be leaving a thumbs up in [Issue #1](https://github.com/bepaald/get_signal_desktop_key/issues/1). 
 
