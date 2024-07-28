@@ -139,6 +139,8 @@ std::string getSecret_SecretService()
     std::cout << "Failed to get any items" << std::endl;
     return secret;
   }
+  else
+    if (g_verbose) std::cout << "Got " << items.size() << " items to check" << std::endl;
 
   std::vector<unsigned char> secret_bytes;
   for (auto const &item : items)
@@ -154,10 +156,12 @@ std::string getSecret_SecretService()
 
 #if __cpp_lib_string_contains >= 202011L
     if ((label.contains("Chrome") || label.contains("Chromium")) &&
-        (label.contains("Safe Storage") || label.contains("Keys")))
+        (label.contains("Safe Storage") || label.contains("Keys")) &&
+        (!label.contains("Control")))
 #else
     if ((label.find("Chrome") != std::string::npos || label.find("Chromium") != std::string::npos) &&
-        (label.find("Safe Storage") != std::string::npos || label.find("Keys") != std::string::npos))
+        (label.find("Safe Storage") != std::string::npos || label.find("Keys") != std::string::npos) &&
+        (label.find("Control") == std::string::npos))
 #endif
     {
       /* GET SECRETS */
