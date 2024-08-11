@@ -21,15 +21,16 @@
 
 #include "dbuscon.h"
 
-std::string getSecret_Kwallet(int version)
+void getSecret_Kwallet(int version, std::set<std::string> *secrets)
 {
-  std::string secret;
+  if (!secrets)
+    return;
 
   DBusCon dbuscon;
   if (!dbuscon.ok())
   {
     std::cout << "Error connecting to dbus session" << std::endl;
-    return secret;
+    return;
   }
 
   std::string destination("org.kde.kwalletd" + std::to_string(version));
@@ -46,7 +47,7 @@ std::string getSecret_Kwallet(int version)
   if (walletname.empty())
   {
     std::cout << "Failed to get wallet name" << std::endl;
-    return secret;
+    return;
   }
   if (g_verbose) std::cout << " *** Wallet name: " << walletname << std::endl;
 
@@ -66,7 +67,7 @@ std::string getSecret_Kwallet(int version)
   if (handle < 0)
   {
     std::cout << "Failed to open wallet" << std::endl;
-    return secret;
+    return;
   }
   if (g_verbose) std::cout << " *** Handle: " << handle << std::endl;
 
@@ -83,7 +84,7 @@ std::string getSecret_Kwallet(int version)
   if (folders.empty())
   {
     std::cout << "Failed to get any folders from wallet" << std::endl;
-    return secret;
+    return;
   }
 
   for (auto const &folder : folders)
@@ -114,18 +115,12 @@ std::string getSecret_Kwallet(int version)
       if (passwordmap.empty())
       {
         std::cout << "Failed to get password map" << std::endl;
-        return secret;
+        return;
       }
 
       for (auto const &e : passwordmap)
-      {
         if (e.first == "Chromium Safe Storage" || e.first == "Chrome Safe Storage")
-        {
-          secret = e.second;
-          break;
-        }
-      }
-
+          secrets->insert(e.second);
     }
   }
 
@@ -148,5 +143,5 @@ std::string getSecret_Kwallet(int version)
 
 
 
-  return secret;
+  return;
 }

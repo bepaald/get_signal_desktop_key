@@ -23,7 +23,6 @@
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
 #include <openssl/err.h>
-#include <openssl/core_names.h>
 #include <iostream>
 #include <memory>
 #include <algorithm>
@@ -156,7 +155,6 @@ std::string decryptKey_linux(std::string const &secret, std::string const &encry
   if (std::memcmp(data.get(), v11header, 3) != 0) [[unlikely]]
     std::cout << "WARNING: Unexpected header value: " << bepaald::bytesToHexString(data.get(), 3) << std::endl;
 
-  
 
   // set iv
   uint64_t iv_length = 16;
@@ -165,17 +163,17 @@ std::string decryptKey_linux(std::string const &secret, std::string const &encry
 
 
 
+
   // init cipher and context
   std::unique_ptr<EVP_CIPHER_CTX, decltype(&::EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), &::EVP_CIPHER_CTX_free);
-  std::unique_ptr<EVP_CIPHER, decltype(&::EVP_CIPHER_free)> cipher(EVP_CIPHER_fetch(NULL, "AES-128-CBC", NULL), &::EVP_CIPHER_free);
-  if (!ctx || !cipher)
+  if (!ctx)
   {
-    std::cout << "error alloc" << std::endl;
+    std::cout << "Failed to create decryption context" << std::endl;
     return decryptedkey;
   }
 
   // init decrypt
-  if (!EVP_DecryptInit_ex2(ctx.get(), cipher.get(), key.get(), iv, nullptr)) [[unlikely]]
+  if (!EVP_DecryptInit_ex(ctx.get(), EVP_aes_128_cbc(), nullptr, key.get(), iv)) [[unlikely]]
   {
     std::cout << "Failed to initialize decryption operation" << std::endl;
     return decryptedkey;
@@ -221,9 +219,8 @@ std::string decryptKey_linux(std::string const &secret, std::string const &encry
     if ((int)output[realsize + i] != (padding ? padding : 16))
     {
       std::cout << "Decryption appears to have failed (padding bytes have unexpected value)" << std::endl;
-      break;
+      return std::string();
     }
-
 
   decryptedkey = bepaald::bytesToPrintableString(output.get(), realsize);
   if (decryptedkey.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789") != std::string::npos)

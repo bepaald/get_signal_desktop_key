@@ -27,6 +27,20 @@ bool g_verbose;
 
 int main(int argc, char *argv[])
 {
+  auto getKey = [](std::set<std::string> const &secrets, std::string const &encryptedkey, std::string &decrypted)
+  {
+    if (g_verbose) [[unlikely]]
+      for (auto const &s : secrets)
+        std::cout << "(Got secrets: " << s << ")" << std::endl;
+    for (auto const &s : secrets)
+    {
+      decrypted = decryptKey_linux(s, encryptedkey);
+      if (!decrypted.empty())
+        return true;
+    }
+    return false;
+  };
+
   // arg handling
   g_verbose = false;
   std::string signal_config_file(std::getenv("HOME"));
@@ -46,28 +60,46 @@ int main(int argc, char *argv[])
     std::cout << "Failed to get encrypted key" << std::endl;
     return 1;
   }
-  std::cout << "(Encrypted key: " << encryptedkey << ")" << std::endl;
+  if (g_verbose) [[unlikely]] std::cout << "(Encrypted key: " << encryptedkey << ")" << std::endl;
 
-  // get secret
-  std::string secret = getSecret_SecretService();
-  if (secret.empty())
-    secret = getSecret_Kwallet(6);
-  if (secret.empty())
-    secret = getSecret_Kwallet(5);
-  if (secret.empty())
+  std::set<std::string> secrets;
+  std::string decrypted;
+
+  // get secret from libsecret (should work on Gnome and KDE 6)
+  getSecret_SecretService(&secrets);
+  if (getKey(secrets, encryptedkey, decrypted)) // try what we got now (maybe we dont need to check kwallet)...
   {
-    std::cout << "Failed to get secret" << std::endl;
+    std::cout << " *** Decrypted key : " << decrypted << " ***" << std::endl;
+    return 0;
+  }
+
+  // get secret from kwallet (should work on KDE 6)
+  getSecret_Kwallet(6, &secrets);
+  if (getKey(secrets, encryptedkey, decrypted))
+  {
+    std::cout << " *** Decrypted key : " << decrypted << " ***" << std::endl;
+    return 0;
+  }
+
+  // get secret from kwallet (should work on KDE 5)
+  getSecret_Kwallet(5, &secrets);
+  if (getKey(secrets, encryptedkey, decrypted))
+  {
+    std::cout << " *** Decrypted key : " << decrypted << " ***" << std::endl;
+    return 0;
+  }
+
+  if (secrets.empty())
+  {
+    std::cout << "Failed to get any secrets" << std::endl;
     return 1;
   }
-  std::cout << "(Got secret: " << secret << ")" << std::endl;
 
-  std::string decrypted = decryptKey_linux(secret, encryptedkey);
   if (decrypted.empty())
   {
-    std::cout << "Failed to decrypt key" << std::endl;
+    std::cout << "Failed to decrypt valid key. :(" << std::endl;
     return 1;
   }
 
-  std::cout << "Decrypted: " << decrypted << std::endl;
-  return 0;
+  return 1;
 }

@@ -21,15 +21,16 @@
 
 #include "dbuscon.h"
 
-std::string getSecret_SecretService()
+void getSecret_SecretService(std::set<std::string> *secrets)
 {
-  std::string secret;
+  if (!secrets)
+    return;
 
   DBusCon dbuscon;
   if (!dbuscon.ok())
   {
     std::cout << "Error connecting to dbus session" << std::endl;
-    return secret;
+    return;
   }
 
   /* OPEN SESSION */
@@ -44,7 +45,7 @@ std::string getSecret_SecretService()
   if (session_objectpath.empty())
   {
     std::cout << "Error getting session" << std::endl;
-    return secret;
+    return;
   }
   if (g_verbose) std::cout << " *** Session: " << session_objectpath << std::endl;
 
@@ -88,10 +89,11 @@ std::string getSecret_SecretService()
   if (prompt.empty())
   {
     std::cout << "Error getting prompt" << std::endl;
-    return secret;
+    return;
   }
   if (g_verbose) std::cout << " *** Prompt: " << prompt << std::endl;
 
+  bool unlocked_by_us = false;
   if (prompt != "/")
   {
     /* REGISTER FOR SIGNAL */
@@ -111,6 +113,8 @@ std::string getSecret_SecretService()
     // unlocked next anyway...
     if (!dbuscon.waitSignal(20, 2500, "org.freedesktop.Secret.Prompt", "Completed"))
       if (g_verbose) std::cout << "Failed to wait for unlock prompt..." << std::endl;
+
+    unlocked_by_us = true;
   }
 
   /* CHECK COLLECTION IS UNLOCKED NOW */
@@ -123,7 +127,7 @@ std::string getSecret_SecretService()
   if (islocked)
   {
     std::cout << "Failed to unlock collection" << std::endl;
-    return secret;
+    return;
   }
 
   /* GET ITEMS */
@@ -137,12 +141,11 @@ std::string getSecret_SecretService()
   if (items.empty())
   {
     std::cout << "Failed to get any items" << std::endl;
-    return secret;
+    return;
   }
   else
     if (g_verbose) std::cout << "Got " << items.size() << " items to check" << std::endl;
 
-  std::vector<unsigned char> secret_bytes;
   for (auto const &item : items)
   {
     // check label
@@ -183,34 +186,39 @@ std::string getSecret_SecretService()
 
         A struct has signature (oayays), the brackets meaning 'struct'. we want the 'value' (the second ay);
       */
-      secret_bytes = dbuscon.get<std::vector<unsigned char>>("(oayays)", {0, 2});
-      if (!secret_bytes.empty())
-        break;
+      std::vector<unsigned char> secret_bytes = dbuscon.get<std::vector<unsigned char>>("(oayays)", {0, 2});
+
+      // Since the secret is always 16 bytes, in base64 encoding,
+      // its length must be [16/3]*4 + two '=' padding.
+      if (secret_bytes.size() != 24 ||
+          secret_bytes[23] != '=' ||
+          secret_bytes[22] != '=')
+      {
+        if (g_verbose) [[unlikely]] std::cout << "Retrieved data is not a valid secret" << std::endl;
+        continue;
+      }
+
+      if (g_verbose) [[unlikely]]
+      {
+        std::cout << " *** SECRET: ";
+        for (auto c : secret_bytes)
+          std::cout << c;
+        std::cout << std::endl;
+      }
+      secrets->insert(std::string{secret_bytes.begin(), secret_bytes.end()});
     }
   }
 
-  if (secret_bytes.empty())
-  {
-    std::cout << "Failed to get secret..." << std::endl;
-    return secret;
-  }
-
-  if (g_verbose)
-  {
-    std::cout << " *** SECRET: ";
-    for (auto c : secret_bytes)
-      std::cout << c;
-    std::cout << std::endl;
-  }
-
   /* LOCK COLLECTION */
-  if (g_verbose) std::cout << "[Lock]" << std::endl;
-  dbuscon.callMethod("org.freedesktop.secrets",
-                     "/org/freedesktop/secrets",
-                     "org.freedesktop.Secret.Service",
-                     "Lock",
-                     std::vector<DBusArg>{DBusArray{DBusObjectPath{"/org/freedesktop/secrets/aliases/default"}}});
-
+  if (unlocked_by_us)
+  {
+    if (g_verbose) std::cout << "[Lock]" << std::endl;
+    dbuscon.callMethod("org.freedesktop.secrets",
+                       "/org/freedesktop/secrets",
+                       "org.freedesktop.Secret.Service",
+                       "Lock",
+                       std::vector<DBusArg>{DBusArray{DBusObjectPath{"/org/freedesktop/secrets/aliases/default"}}});
+  }
 
   /* CLOSE SESSION */
   if (g_verbose) std::cout << "[Close]" << std::endl;
@@ -219,6 +227,4 @@ std::string getSecret_SecretService()
                      "org.freedesktop.Secret.Session",
                      "Close");
 
-  secret = {secret_bytes.begin(), secret_bytes.end()};
-  return secret;
 }
