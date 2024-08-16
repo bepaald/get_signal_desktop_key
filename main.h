@@ -32,6 +32,6 @@ std::string getEncryptedKey(std::string const &configfile);
 void getSecret_SecretService(std::set<std::string> *secrets);
 void getSecret_Kwallet(int version, std::set<std::string> *secrets);
 
-std::string decryptKey_linux(std::string const &secret, std::string const &encrypted_key);
+std::string decryptKey_linux_mac(std::string const &secret, std::string const &encrypted_key);
 
 #endif

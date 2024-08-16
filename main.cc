@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         std::cout << "(Got secrets: " << s << ")" << std::endl;
     for (auto const &s : secrets)
     {
-      decrypted = decryptKey_linux(s, encryptedkey);
+      decrypted = decryptKey_linux_mac(s, encryptedkey);
       if (!decrypted.empty())
         return true;
     }
