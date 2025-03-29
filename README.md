@@ -37,7 +37,9 @@ If the program consistently fails, try adding `-v` to the command line for more 
 
 # Future plans
 
-It is planned to incorparate this functionality into [signalbackup-tools](https://github.com/bepaald/signalbackup-tools) in the future. However, for now
-- I am very short on time
-- I am new to dbus, and think this code needs a lot more going over
-- I am very unsure currently if it works at all for most people.
+This is done
+
+~~It is planned to incorparate this functionality into [signalbackup-tools](https://github.com/bepaald/signalbackup-tools) in the future. However, for now~~
+~~- I am very short on time~~
+~~- I am new to dbus, and think this code needs a lot more going over~~
+~~- I am very unsure currently if it works at all for most people.~~
